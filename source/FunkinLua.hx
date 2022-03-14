@@ -64,21 +64,16 @@ class FunkinLua {
 		//trace('Lua version: ' + Lua.version());
 		//trace("LuaJIT version: " + Lua.versionJIT());
 
-		LuaL.dostring(lua, CLENSE);
 		var result:Dynamic = LuaL.dofile(lua, script);
 		var resultStr:String = Lua.tostring(lua, result);
 		if(resultStr != null && result != 0) {
-			trace('Error on lua script! ' + resultStr);
-			#if windows
-			lime.app.Application.current.window.alert(resultStr, 'Error on lua script!');
-			#else
-			luaTrace('Error loading lua script: "$script"\n' + resultStr,true,false);
-			#end
+			lime.app.Application.current.window.alert(resultStr, 'Error on .LUA script!');
+			trace('Error on .LUA script! ' + resultStr);
 			lua = null;
 			return;
 		}
 		scriptName = script;
-		trace('lua file loaded succesfully:' + script);
+		trace('Lua file loaded succesfully:' + script);
 
 		#if (haxe >= "4.0.0")
 		accessedProps = new Map();
@@ -112,6 +107,7 @@ class FunkinLua {
 		
 		// Block require and os, Should probably have a proper function but this should be good enough for now until someone smarter comes along and recreates a safe version of the OS library
 		set('require', false);
+		set('os', false);
 
 		// Camera poo
 		set('cameraX', 0);
@@ -259,18 +255,6 @@ class FunkinLua {
 			luaTrace("Script doesn't exist!");
 		});
 		
-		Lua_helper.add_callback(lua, "loadCredits", function(?musicos:String = null, ?freakySex:Bool) {
-
-			LoadingState.loadAndSwitchState(new CreditsState());
-			FlxG.sound.playMusic(Paths.music(musicos));
-			if(musicos == '') {
-               freakySex = true;
-			}
-			if(freakySex == true) {
-				FlxG.sound.playMusic(Paths.music('freakyMenu'));
-			}
-		});
-
 		Lua_helper.add_callback(lua, "loadSong", function(?name:String = null, ?difficultyNum:Int = -1) {
 			if(name == null || name.length < 1)
 				name = PlayState.SONG.song;
@@ -391,25 +375,6 @@ class FunkinLua {
 			}
 			return Reflect.setProperty(Type.resolveClass(classVar), variable, value);
 		});
-
-                //state shit for trolling coming??
-                Lua_helper.add_callback(lua, "switchState", function(state:String, loadBefore:Bool = false) {
-                        var bigPiss:Dynamic = Type.resolveClass(state);
-                        if (bigPiss != null)
-                        {
-                                if(!loadBefore) {
-			                MusicBeatState.switchState(new bigPiss());
-                                }
-                                else {
-                                        LoadingState.loadAndSwitchState(new bigPiss());
-                                }
-                        }
-                        else
-                        {
-                                luaTrace("State " + state + " doesn't exist!");
-                        }
-		});
-                Lua_helper.add_callback(lua, "resetState", MusicBeatState.resetState);
 
 		//shitass stuff for epic coders like me B)  *image of obama giving himself a medal*
 		Lua_helper.add_callback(lua, "getObjectOrder", function(obj:String) {
@@ -2077,15 +2042,6 @@ class FunkinLua {
 	{
 		return PlayState.instance.isDead ? GameOverSubstate.instance : PlayState.instance;
 	}
-	static inline var CLENSE:String = "
-	os.execute = nil;
-	os.exit = nil;
-	package.loaded.os.execute = nil;
-	package.loaded.os.exit = nil;
-	process = nil;
-	package.loaded.process = nil;
-
-	"; // Fuck this, I can't figure out linc_lua, so I'mma set everything in Lua itself - Super
 }
 
 class ModchartSprite extends FlxSprite
